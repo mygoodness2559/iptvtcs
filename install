@@ -1,171 +1,168 @@
 #!/bin/bash
 
-# Stalker WM Portal road warrior installer for Debian, Ubuntu
+echo -e " \e[32mUpdateing system\e[0m"
+sleep 2
+apt-get update -y
+apt-get upgrade -y
+apt-get install net-tools -y 
 
-# This script will work on Debian, Ubuntu and probably other distros
-# of the same families, although no support is offered for them. It isn't
-# bulletproof but it will probably work if you simply want to setup a Stalker WM Portal on
-# your Debian/Ubuntu box. It has been designed to be as unobtrusive and
-# universal as possible.
-
-# This is a free shell script under GNU GPL version 3.0 or above
-# Copyright (C) 2017 LinuxHelps project.
-# Feedback/comment/suggestions : https://linuxhelps.net/
-# Author Ivan Bachvarov a.k.a SlaSerX
-
-
-#Let's Encrypt Repository
-
-#apt install software-properties-common -y
-#yes | add-apt-repository ppa:certbot/certbot
-
-clear;
-# clear;
-# Reset
-Reset='\e[0m'       # Text Reset
-# Regular Colors
-Black='\e[0;30m'        # Black
-Red='\e[0;31m'          # Red
-Green='\e[0;32m'        # Green
-Yellow='\e[0;33m'       # Yellow
-Blue='\e[0;34m'         # Blue
-Purple='\e[0;35m'       # Purple
-Cyan='\e[0;36m'         # Cyan
-White='\e[0;37m'        # White
-# Bold
-BBlack='\e[1;30m'       # Black
-BRed='\e[1;31m'         # Red
-BGreen='\e[1;32m'       # Green
-BYellow='\e[1;33m'      # Yellow
-BBlue='\e[1;34m'        # Blue
-BPurple='\e[1;35m'      # Purple
-BCyan='\e[1;36m'        # Cyan
-BWhite='\e[1;37m'       # White
-
-echo -ne "${BGreen}Welcome to Ministra auto install script By SlaSerX\n
-${BRed}Warning: This install script will remove your existing apache2 and its configuration in instead of it install nginx.${Reset}\n
-${BWhite}Do you want continue (y/n):${Reset} ";
-read AGREE
-if [ "$AGREE" != "y" ]; then
-	echo -ne "${BWhite}Exiting... ${Reset}\n";
-	exit;
-fi
-
-# Tweak nameservers
-echo "nameserver 8.8.8.8" > /etc/resolv.conf
+VERSION="5.6.8"
+TIME_ZONE="Europe/Amsterdam" #
+mysql_root_password="test123456"
+repository="http://vancho.xyz/stalker"
 
 # SET LOCALE TO UTF-8
 function setLocale {
-	echo -ne "${BCyan}Setting locales...${Reset}"
+	echo -e " \e[32mSetting locales\e[0m"
 	locale-gen en_US.UTF-8  >> /dev/null 2>&1
 	export LANG="en_US.UTF-8" >> /dev/null 2>&1
-	echo -e "${BGreen}\t\t\t\tDone.${Reset}"
+	echo -e " \e[32mDone.\e[0m"
 }
 
 # TWEAK SYSTEM VALUES
 function tweakSystem {
-	echo -ne "${BCyan}Tweaking system...${Reset}"
+	echo -ne "\e[32mTweaking system"
 	echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf
 	echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.conf
 	echo "net.ipv6.conf.lo.disable_ipv6 = 1" >> /etc/sysctl.conf
 	echo "fs.file-max = 327680" >> /etc/sysctl.conf
-	echo "kern.maxfiles = 327680" >> /etc/sysctl.conf
-	echo "kern.maxfilesperproc = 327680" >> /etc/sysctl.conf
 	echo "kernel.core_uses_pid = 1" >> /etc/sysctl.conf
 	echo "kernel.core_pattern = /var/crash/core-%e-%s-%u-%g-%p-%t" >> /etc/sysctl.conf
 	echo "fs.suid_dumpable = 2" >> /etc/sysctl.conf
 	sysctl -p >> /dev/null 2>&1
-	echo -e "${BGreen}\t\t\t\tDone.${Reset}"
+	echo -e " \e[32mDone.\e[0m"
 }
 
 setLocale;
 tweakSystem;
 
-#Update and Upgrade
-echo "Updating and Upgrading"
-apt-get update && apt-get upgrade -y
+sleep 3
 
-# Setting for the new UTF-8 terminal support in Lion
-export LC_CTYPE=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
+add-apt-repository ppa:ondrej/php -y
 
-apt-get install -y dialog wget curl nano sudo unzip sl ccze lolcat software-properties-common aview
+echo -e " \e[32mInstall required packages\e[0m"
+sleep 3
+apt-get install nginx nginx-extras -y 
+/etc/init.d/nginx stop
+sleep 1
+apt-get install apache2 -y
+/etc/init.d/apache2 stop
+sleep 1
 
-chmod +x ./lab/*
-(
-c=20
-while [ $c -ne 120 ]
-    do
-        echo $c
-        echo "###"
-        echo "$c %"
-        echo "###"
-        ((c+=20))
-        sleep 1
-done
-) |
-dialog --title "Installation will begin shortly" --gauge "Please wait ...." 10 60 0
+apt-get -y install php7.0-geoip php7.0-intl php7.0-tidy php7.0-igbinary php7.0-msgpack php7.0-mcrypt php7.0-mbstring php7.0-zip memcached php7.0-memcached php7.0 php7.0-xml php7.0-gettext php7.0-soap php7.0-mysql php-pear nodejs libapache2-mod-php7.0 php7.0-curl php7.0-imagick php7.0-sqlite3 unzip
+update-alternatives --set php /usr/bin/php7.0
 
+sleep 2
 
-if [[ $EUID -ne 0 ]]; then
- echo "⚠️  This script must be run as root ⚠️ " 
- exit 1
-else
- cmd=(dialog --separate-output --checklist "Please Select Software you want to install:" 22 76 16)
- options=(1 "Install Ministra Portal" off # any option can be set to default to "on"
- 2 "Install Stalker Portal" off
- 3 "Install Ministra on Ubuntu 16.04" off
- 4 "Install Ministra on Debian 8" off
- 5 "Install Ministra 5.5.0 Ubuntu 16" off
- 6 "Install of the Storage Server" off
- 7 "Exit" off)
- choices=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
- clear
- for choice in $choices
- do
- case $choice in
- 1)
- #Install Ministra*
- echo "Installing Ministra"
- ./lab/ministra
-;;
-2)
- #Install Stalker
- echo "Installing Stalker"
-./lab/stalker
- ;;
+echo -e " \e[32mInstalling phing\e[0m"
+sleep 3
+pear channel-discover pear.phing.info
+pear install --alldeps phing/phing-2.15.2
 
-3)
- #Install Ubuntu 16.04
- echo "Install Ministra on Ubuntu 16.04"
-./lab/ubuntu16
- ;;
+echo -e " \e[32minstalling npm 2.15.11\e[0m"
+sleep 3
+# Install NPM  2.15.11
+apt-get install npm -y
+npm config set strict-ssl false
+npm install -g npm@2.15.11
+# ln -s /usr/bin/nodejs /usr/bin/node
 
-4)
- #Install Ubuntu 16.04
- echo "Install Ministra on Debian 8"
-./lab/debian
- ;;
-
-5)
- # Install of the Storage Server
- echo "Install of the Ministra 5.5.0"
-./lab/ministra5
- ;;
-
-6)
- # Install of the Storage Server
- echo "Install of the Storage Server"
-./lab/storage
- ;;
-
- #Exit
-7)
-exit
- ;;
-
- esac
- done
-fi
+echo -e " \e[32mSet the Server Timezone to EDT\e[0m"
+sleep 3
+timedatectl set-timezone $TIME_ZONE
+dpkg-reconfigure -f noninteractive tzdata
 
 
+echo -e " \e[32mInstalling mysql server\e[0m"
+sleep 3
+export DEBIAN_FRONTEND="noninteractive"
+echo "mysql-server mysql-server/root_password password $mysql_root_password" | sudo debconf-set-selections
+echo "mysql-server mysql-server/root_password_again password $mysql_root_password" | sudo debconf-set-selections
+apt-get install -y mysql-server
+# sed -i 's/127\.0\.0\.1/0\.0\.0\.0/g' /etc/mysql/my.cnf
+sed -i 's/127\.0\.0\.1/0\.0\.0\.0/g' /etc/mysql/mysql.conf.d/mysqld.cnf
+mysql -uroot -p$mysql_root_password -e "USE mysql; UPDATE user SET Host='%' WHERE User='root' AND Host='localhost'; DELETE FROM user WHERE Host != '%' AND User='root'; FLUSH PRIVILEGES;"
+mysql -uroot -p$mysql_root_password -e "create database stalker_db;"
+mysql -uroot -p$mysql_root_password -e "ALTER USER root IDENTIFIED WITH mysql_native_password BY '"$mysql_root_password"';"
+mysql -uroot -p$mysql_root_password -e "CREATE USER stalker IDENTIFIED BY '1';"
+mysql -uroot -p$mysql_root_password -e "GRANT ALL ON *.* TO stalker WITH GRANT OPTION;"
+mysql -ustalker -p1 -e "ALTER USER stalker IDENTIFIED WITH mysql_native_password BY '1';"
+
+
+echo 'sql_mode=""' >> /etc/mysql/mysql.conf.d/mysqld.cnf
+echo 'default_authentication_plugin=mysql_native_password' >> /etc/mysql/mysql.conf.d/mysqld.cnf
+service mysql restart
+
+echo -e " \e[32mInstalling Ministra Portal $VERSION \e[0m"
+sleep 3
+cd /var/www/html/
+wget http://download.ministra.com/downloads/180051ddbc93f977ed3fa3758f907df6/ministra-5.6.10.zip
+unzip ministra-5.6.10.zip
+rm -rf *.zip
+
+
+sed -i 's/short_open_tag = Off/short_open_tag = On/g' /etc/php/7.0/apache2/php.ini
+ln -s /etc/php/7.0/mods-available/mcrypt.ini /etc/php/8.0/mods-available/
+phpenmod mcrypt
+a2enmod rewrite
+# apt-get purge libapache2-mod-php5filter > /dev/null
+
+
+cd /etc/apache2/sites-enabled/
+rm -rf *
+wget $repository/000-default.conf
+cd /etc/apache2/
+rm -rf ports.conf
+wget $repository/ports.conf
+cd /etc/nginx/sites-available/
+rm -rf default
+wget $repository/default
+/etc/init.d/apache2 restart
+/etc/init.d/nginx restart
+sleep 1
+rm -rf /var/www/html/stalker_portal/admin/vendor
+cd /var/www/html/stalker_portal/admin
+wget $repository/vendor.tar
+tar -xvf vendor.tar
+sleep 1
+
+
+# Fix Smart Launcher Applications
+mkdir /var/www/.npm
+chmod 777 /var/www/.npm
+
+cd /var/www/html/stalker_portal/server
+wget -O custom.ini $repository/custom.ini
+cd
+
+cd /var/www/html/stalker_portal/deploy
+sed -i 's/apt-get -y install zlibc curl php-sqlite3 php-soap php-intl php-gettext php-memcache php-memcached php-curl php-mysql php-mcrypt php-tidy php-imagick php-geoip curl npm git zip unzip php-zip/apt-get -y install zlibc curl php7.0-sqlite3 php-soap php7.0-intl php7.0-gettext php7.0-memcache php7.0-memcached php7.0-curl php7.0-mysql php7.0-mcrypt php7.0-tidy php7.0-imagick php7.0-geoip curl npm git zip unzip php7.0-zip/' build.xml
+sed -i 's/php5enmod/phpenmod/g' build.xml
+sed -i 's/php5dismod/phpdismod/g' build.xml
+sudo phing
+sleep 1
+
+echo -e " \e[32m-------------------------------------------------------------------"
+echo -e " \e[0mInstall Complete !"
+echo ""
+echo -e " \e[0mDefault username is: \e[32madmin"
+echo -e " \e[0mDefault password is: \e[32m1"
+echo ""
+echo -e " \e[0mPORTAL WAN : \e[32mhttp://`wget -qO- http://ipecho.net/plain | xargs echo`/stalker_portal"
+echo -e " \e[0mPORTAL LAN : \e[32mhttp://`ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`/stalker_portal"
+echo -e " \e[0mMysql User : \e[32mroot"
+echo -e " \e[0mMySQL Pass : \e[32m$mysql_root_password"
+echo ""
+echo -e " \e[0mChange admin panel password through the terminal :"
+echo -e " \e[32mmysql -u root -p"
+echo -e " \e[32muse stalker_db;"
+echo -e " \e[32mupdate administrators set pass=MD5('new_password_here') where login='admin';"
+echo -e " \e[32mquit;"
+echo -e " \e[0mLogout from web panel and Login with new password."
+echo ""
+echo -e " \e[0mRemove all test channels from the database through the terminal :"
+echo -e " \e[32mmysql -u root -p stalker_db"
+echo -e " \e[32mtruncate ch_links;"
+echo -e " \e[32mtruncate itv;"
+echo -e " \e[32mquit;"
+echo -e " \e[32m--------------------------------------------------------------------\e[0m"
